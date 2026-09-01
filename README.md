@@ -1,6 +1,6 @@
 # InboxValid MCP Server
 
-MCP server that exposes `verify_email` for email deliverability checks. Built for the Tvaram / InboxValid.ai internship assignment (Task 2, Option A).
+MCP server that exposes `verify_email` for email deliverability checks. Built for the Tvaram internship assignment (Task 2, Option A).
 
 The InboxValid API is mocked. The focus is a typed tool interface that agents can call reliably.
 
