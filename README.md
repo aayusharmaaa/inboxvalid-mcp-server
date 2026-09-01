@@ -1,10 +1,10 @@
 # InboxValid MCP Server
 
-MCP server that exposes `verify_email` for email deliverability checks. Built for the Tvaram internship assignment (Task 2, Option A).
+MCP server that exposes `verify_email` for email deliverability checks. Built for the Tvaram / InboxValid.ai internship assignment (Task 2, Option A).
 
 The InboxValid API is mocked. The focus is a typed tool interface that agents can call reliably.
 
-![verify_email demo](docs/demo-screenshot.svg)
+![npm run demo](docs/demo-screenshot.png)
 
 ## Quick start
 
@@ -139,8 +139,6 @@ DISPOSABLE_DOMAINS=mailinator.com,tempmail.com
 ```bash
 npm run demo
 ```
-
-![npm test — 65 passing](docs/tests-screenshot.svg)
 
 Runs `verify_email` in-process for: valid email, bad syntax, disposable domain, and a transient failure that succeeds on retry.
 
