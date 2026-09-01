@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220" role="img" aria-label="npm test output">
+  <rect width="720" height="220" rx="12" fill="#11111b"/>
+  <rect x="0" y="0" width="720" height="40" rx="12" fill="#181825"/>
+  <circle cx="20" cy="20" r="6" fill="#f38ba8"/>
+  <circle cx="40" cy="20" r="6" fill="#f9e2af"/>
+  <circle cx="60" cy="20" r="6" fill="#a6e3a1"/>
+  <text x="80" y="25" font="600 13px Segoe UI, sans-serif" fill="#cdd6f4">PowerShell  tvaram</text>
+
+  <text x="24" y="72" font="14px Consolas, monospace" fill="#6c7086">C:\...\tvaram&gt;</text>
+  <text x="160" y="72" font="14px Consolas, monospace" fill="#a6e3a1">npm test</text>
+
+  <text x="24" y="108" font="14px Consolas, monospace" fill="#a6e3a1"> tests/types.test.ts (17 tests)</text>
+  <text x="24" y="132" font="14px Consolas, monospace" fill="#a6e3a1"> tests/verification.test.ts (29 tests)</text>
+  <text x="24" y="156" font="14px Consolas, monospace" fill="#a6e3a1"> tests/client.test.ts (12 tests)</text>
+  <text x="24" y="180" font="14px Consolas, monospace" fill="#a6e3a1"> tests/server.test.ts (7 tests)</text>
+
+  <text x="24" y="208" font="14px Consolas, monospace" fill="#89b4fa">Tests  65 passed (65)</text>
+</svg>

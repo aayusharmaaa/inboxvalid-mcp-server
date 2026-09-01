@@ -4,6 +4,8 @@ MCP server that exposes `verify_email` for email deliverability checks. Built fo
 
 The InboxValid API is mocked. The focus is a typed tool interface that agents can call reliably.
 
+![verify_email demo](docs/demo-screenshot.svg)
+
 ## Quick start
 
 ```bash
@@ -137,6 +139,8 @@ DISPOSABLE_DOMAINS=mailinator.com,tempmail.com
 ```bash
 npm run demo
 ```
+
+![npm test — 65 passing](docs/tests-screenshot.svg)
 
 Runs `verify_email` in-process for: valid email, bad syntax, disposable domain, and a transient failure that succeeds on retry.
 
