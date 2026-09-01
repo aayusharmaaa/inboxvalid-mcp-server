@@ -1,7 +1,10 @@
 import type { ProviderClient } from "./client.js";
-import type {
-  VerificationConfig,
-  VerificationResult,
+import {
+  ProviderError,
+  providerResponseSchema,
+  type ProviderResponse,
+  type VerificationConfig,
+  type VerificationResult,
 } from "./types.js";
 
 export interface VerificationServiceDeps {
@@ -9,39 +12,162 @@ export interface VerificationServiceDeps {
   config: VerificationConfig;
 }
 
-/**
- * Core business logic: normalize → local validation → provider call → map result.
- * MCP and other adapters call this service; they do not contain verification rules.
- */
+// Practical syntax check — not RFC-complete, just catches obvious junk
+// before we bother calling the provider.
+const PRACTICAL_EMAIL_PATTERN =
+  /^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9])?@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableProviderError(error: unknown): boolean {
+  return error instanceof ProviderError && error.retryable;
+}
+
+// Core verification pipeline. MCP and any future adapters call into here.
 export class VerificationService {
   constructor(private readonly deps: VerificationServiceDeps) {}
 
   async verify(address: string): Promise<VerificationResult> {
-    throw new Error("VerificationService.verify not implemented");
+    const email = this.normalize(address);
+
+    // Short-circuit locally — no point hitting the API for these.
+    if (!this.isValidSyntax(email)) {
+      return {
+        email,
+        status: "invalid",
+        reason: "Invalid email address format",
+      };
+    }
+
+    if (this.isDisposableDomain(email)) {
+      return {
+        email,
+        status: "risky",
+        reason: "Disposable email domain",
+      };
+    }
+
+    const raw = await withRetry(
+      () => this.deps.provider.verify(email),
+      this.deps.config.retry,
+    );
+
+    const parsed = providerResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new ProviderError(
+        "MALFORMED_RESPONSE",
+        "Provider returned an invalid response shape",
+      );
+    }
+
+    return mapProviderResponse(parsed.data, email);
   }
 
-  /** Trim and lowercase the address. */
   normalize(address: string): string {
-    throw new Error("VerificationService.normalize not implemented");
+    return address.trim().toLowerCase();
   }
 
-  /** Practical syntax check — not full RFC parsing. */
   isValidSyntax(email: string): boolean {
-    throw new Error("VerificationService.isValidSyntax not implemented");
+    if (email.length < 3 || email.length > 254) {
+      return false;
+    }
+
+    if (email.includes("..")) {
+      return false;
+    }
+
+    const atIndex = email.indexOf("@");
+    if (
+      atIndex <= 0 ||
+      atIndex !== email.lastIndexOf("@") ||
+      atIndex === email.length - 1
+    ) {
+      return false;
+    }
+
+    const local = email.slice(0, atIndex);
+    const domain = email.slice(atIndex + 1);
+
+    if (local.startsWith(".") || local.endsWith(".")) {
+      return false;
+    }
+    if (domain.startsWith(".") || domain.endsWith(".")) {
+      return false;
+    }
+
+    const tld = domain.split(".").pop();
+    if (!tld || tld.length < 2) {
+      return false;
+    }
+
+    return PRACTICAL_EMAIL_PATTERN.test(email);
   }
 
-  /** Check against configured disposable domain list. */
+  // Exact domain match against the configured list.
   isDisposableDomain(email: string): boolean {
-    throw new Error("VerificationService.isDisposableDomain not implemented");
+    const atIndex = email.lastIndexOf("@");
+    if (atIndex <= 0 || atIndex === email.length - 1) {
+      return false;
+    }
+
+    const domain = email.slice(atIndex + 1);
+    return this.deps.config.disposableDomains.has(domain);
   }
 }
 
-/**
- * Call provider with bounded exponential backoff for transient failures only.
- */
+// Translate provider fields (deliverable, risk_level) into our public status.
+export function mapProviderResponse(
+  response: ProviderResponse,
+  email: string,
+): VerificationResult {
+  if (!response.deliverable) {
+    return {
+      email,
+      status: "invalid",
+      reason: response.detail || "Mailbox is not deliverable",
+    };
+  }
+
+  if (response.risk_level === "medium" || response.risk_level === "high") {
+    return {
+      email,
+      status: "risky",
+      reason: response.detail || "Elevated deliverability risk",
+    };
+  }
+
+  return {
+    email,
+    status: "valid",
+    reason: response.detail || "Mailbox exists and is deliverable",
+  };
+}
+
+// Only retries ProviderErrors marked as retryable (429, 5xx, timeout, network).
+// maxAttempts = number of retries after the first failed try.
 export async function withRetry<T>(
   fn: () => Promise<T>,
   config: VerificationConfig["retry"],
 ): Promise<T> {
-  throw new Error("withRetry not implemented");
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= config.maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      const isLastAttempt = attempt === config.maxAttempts;
+      if (isLastAttempt || !isRetryableProviderError(error)) {
+        throw error;
+      }
+
+      const delayMs = config.baseDelayMs * 2 ** attempt;
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
 }
