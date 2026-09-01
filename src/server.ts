@@ -26,8 +26,6 @@ export function createVerificationService(
   });
 }
 
-// MCP adapter — validates tool input, calls VerificationService, returns JSON.
-// No verification logic belongs here.
 export function createMcpServer(service: VerificationService): McpServer {
   const server = new McpServer({
     name: "inboxvalid-mcp-server",
@@ -62,7 +60,6 @@ export function createMcpServer(service: VerificationService): McpServer {
           structuredContent: validated,
         };
       } catch (error) {
-        // Provider went down after retries — surface as a tool error, not a fake result.
         if (error instanceof ProviderError) {
           return {
             isError: true,

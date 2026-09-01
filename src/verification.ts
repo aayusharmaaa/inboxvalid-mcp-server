@@ -12,8 +12,6 @@ export interface VerificationServiceDeps {
   config: VerificationConfig;
 }
 
-// Practical syntax check — not RFC-complete, just catches obvious junk
-// before we bother calling the provider.
 const PRACTICAL_EMAIL_PATTERN =
   /^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9])?@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
@@ -25,14 +23,12 @@ function isRetryableProviderError(error: unknown): boolean {
   return error instanceof ProviderError && error.retryable;
 }
 
-// Core verification pipeline. MCP and any future adapters call into here.
 export class VerificationService {
   constructor(private readonly deps: VerificationServiceDeps) {}
 
   async verify(address: string): Promise<VerificationResult> {
     const email = this.normalize(address);
 
-    // Short-circuit locally — no point hitting the API for these.
     if (!this.isValidSyntax(email)) {
       return {
         email,
@@ -105,7 +101,6 @@ export class VerificationService {
     return PRACTICAL_EMAIL_PATTERN.test(email);
   }
 
-  // Exact domain match against the configured list.
   isDisposableDomain(email: string): boolean {
     const atIndex = email.lastIndexOf("@");
     if (atIndex <= 0 || atIndex === email.length - 1) {
@@ -117,7 +112,6 @@ export class VerificationService {
   }
 }
 
-// Translate provider fields (deliverable, risk_level) into our public status.
 export function mapProviderResponse(
   response: ProviderResponse,
   email: string,
@@ -145,8 +139,6 @@ export function mapProviderResponse(
   };
 }
 
-// Only retries ProviderErrors marked as retryable (429, 5xx, timeout, network).
-// maxAttempts = number of retries after the first failed try.
 export async function withRetry<T>(
   fn: () => Promise<T>,
   config: VerificationConfig["retry"],

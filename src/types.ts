@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-// --- Public MCP contract ---
-// This is what agents see. Keep it stable — don't leak provider internals here.
-
 export const verificationStatusSchema = z.enum(["valid", "invalid", "risky"]);
 export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
 
@@ -18,9 +15,6 @@ export const verifyEmailInputSchema = z.object({
 });
 export type VerifyEmailInput = z.infer<typeof verifyEmailInputSchema>;
 
-// --- Provider API shape ---
-// Raw response from InboxValid. The service maps this to VerificationResult above.
-
 export const providerRiskLevelSchema = z.enum(["low", "medium", "high"]);
 export type ProviderRiskLevel = z.infer<typeof providerRiskLevelSchema>;
 
@@ -31,10 +25,6 @@ export const providerResponseSchema = z.object({
   detail: z.string(),
 });
 export type ProviderResponse = z.infer<typeof providerResponseSchema>;
-
-// --- Provider errors ---
-// Thrown when the API call itself fails — not when the email is bad.
-// Retry logic reads the `retryable` flag to decide whether to try again.
 
 export const providerErrorCodeSchema = z.enum([
   "BAD_REQUEST",
@@ -69,11 +59,8 @@ export class ProviderError extends Error {
   }
 }
 
-// --- Runtime config ---
-// Loaded from .env. Defaults are fine for local dev and tests.
-
 export const retryConfigSchema = z.object({
-  maxAttempts: z.number().int().min(0).max(10), // retries after the first attempt
+  maxAttempts: z.number().int().min(0).max(10),
   baseDelayMs: z.number().int().min(0),
 });
 export type RetryConfig = z.infer<typeof retryConfigSchema>;
