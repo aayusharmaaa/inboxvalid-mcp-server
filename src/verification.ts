@@ -12,6 +12,7 @@ export interface VerificationServiceDeps {
   config: VerificationConfig;
 }
 
+// Not full RFC parsing — just catches obvious junk before we call the provider.
 const PRACTICAL_EMAIL_PATTERN =
   /^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9])?@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
@@ -37,6 +38,7 @@ export class VerificationService {
       };
     }
 
+    // Check disposable list locally — no API call needed.
     if (this.isDisposableDomain(email)) {
       return {
         email,
@@ -101,6 +103,7 @@ export class VerificationService {
     return PRACTICAL_EMAIL_PATTERN.test(email);
   }
 
+  // Exact domain match against DISPOSABLE_DOMAINS in config.
   isDisposableDomain(email: string): boolean {
     const atIndex = email.lastIndexOf("@");
     if (atIndex <= 0 || atIndex === email.length - 1) {
@@ -112,6 +115,7 @@ export class VerificationService {
   }
 }
 
+// Convert provider fields into valid / invalid / risky.
 export function mapProviderResponse(
   response: ProviderResponse,
   email: string,
@@ -139,6 +143,7 @@ export function mapProviderResponse(
   };
 }
 
+// Retries 429, 5xx, timeout, network. Skips 400 and malformed responses.
 export async function withRetry<T>(
   fn: () => Promise<T>,
   config: VerificationConfig["retry"],

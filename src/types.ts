@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// What the MCP tool returns — keep this stable for agents.
 export const verificationStatusSchema = z.enum(["valid", "invalid", "risky"]);
 export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
 
@@ -15,6 +16,7 @@ export const verifyEmailInputSchema = z.object({
 });
 export type VerifyEmailInput = z.infer<typeof verifyEmailInputSchema>;
 
+// Raw shape from the InboxValid API — mapped to VerificationResult in verification.ts.
 export const providerRiskLevelSchema = z.enum(["low", "medium", "high"]);
 export type ProviderRiskLevel = z.infer<typeof providerRiskLevelSchema>;
 
@@ -26,6 +28,7 @@ export const providerResponseSchema = z.object({
 });
 export type ProviderResponse = z.infer<typeof providerResponseSchema>;
 
+// API call failed — different from "email is bad". Retry logic uses the retryable flag.
 export const providerErrorCodeSchema = z.enum([
   "BAD_REQUEST",
   "RATE_LIMITED",
@@ -59,8 +62,9 @@ export class ProviderError extends Error {
   }
 }
 
+// Loaded from .env — see .env.example.
 export const retryConfigSchema = z.object({
-  maxAttempts: z.number().int().min(0).max(10),
+  maxAttempts: z.number().int().min(0).max(10), // retries after the first try
   baseDelayMs: z.number().int().min(0),
 });
 export type RetryConfig = z.infer<typeof retryConfigSchema>;

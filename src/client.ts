@@ -6,6 +6,7 @@ import {
 
 export type { ProviderResponse, ProviderRiskLevel };
 
+// Swap in a real HTTP client here without touching verification.ts.
 export interface ProviderClient {
   verify(address: string): Promise<ProviderResponse>;
 }
@@ -13,7 +14,7 @@ export interface ProviderClient {
 export interface MockProviderOptions {
   latencyMs?: number;
   scenario?: MockScenario;
-  transientFailures?: number;
+  transientFailures?: number; // fail N times before succeeding (for retry tests)
 }
 
 export type MockScenario =
@@ -26,6 +27,7 @@ export type MockScenario =
   | "malformed"
   | "bad_request";
 
+// Demo shortcuts: invalid@example.com, timeout@example.com, etc.
 const ADDRESS_SCENARIO_MAP: Readonly<Record<string, MockScenario>> = {
   invalid: "invalid",
   risky: "risky",
@@ -137,6 +139,7 @@ function successResponse(
   };
 }
 
+// Not implemented — mock is enough for the assignment.
 export class InboxValidClient implements ProviderClient {
   constructor(_baseUrl: string, _apiKey: string) {}
 

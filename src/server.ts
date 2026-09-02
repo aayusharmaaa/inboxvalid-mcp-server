@@ -26,6 +26,7 @@ export function createVerificationService(
   });
 }
 
+// Thin MCP layer — validates input, calls VerificationService, returns JSON.
 export function createMcpServer(service: VerificationService): McpServer {
   const server = new McpServer({
     name: "inboxvalid-mcp-server",
@@ -60,6 +61,7 @@ export function createMcpServer(service: VerificationService): McpServer {
           structuredContent: validated,
         };
       } catch (error) {
+        // Provider failed after retries — return a tool error, not a fake result.
         if (error instanceof ProviderError) {
           return {
             isError: true,
